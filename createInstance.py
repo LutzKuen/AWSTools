@@ -1,17 +1,40 @@
+#!/usr/bin/env python
+__author__ = "Lutz Künneke"
+__copyright__ = ""
+__credits__ = []
+__license__ = ""
+__version__ = "0.1"
+__maintainer__ = "Lutz Künneke"
+__email__ = "lutz.kuenneke89@gmail.com"
+__status__ = "Prototype"
+"""
+Simple wrapper for the boto3 API which makes it easier if 
+you need just one worker instance which has to carry out 
+a specific task and then should be terminated after retrieving 
+the result files
+Author: Lutz Kuenneke, 12.07.2018
+"""
+
+
 import boto3
 import time
 import os
+import configparser
 
 
 class controller(object):
- def __init__(self):
-  self.image_id = 'ami-a2ecd4c7'
-  self.type = 't2.xlarge'
+ def __init__(self, configname):
+  config = configparser.ConfigParser()
+  config.read(configname)
   self.ec2 = boto3.resource('ec2')
+  self.image_id = config.get('EC2','image_id')# 'ami-a2ecd4c7'
+  self.type = config.get('EC2','type')# 't2.xlarge'
   self.instance = None
-  self.keyname = 'oandaInstance'
-  self.pemfile = '/home/ubuntu/oandaInstance.pem'
+  self.keyname = config.get('EC2','keyname')# 'oandaInstance'
+  self.pemfile = config.get('EC2','pemfile')#/home/ubuntu/oandaInstance.pem'
+  self.maxprice = config.get('EC2','max_price')
  def createInstance(self):
+  marketOptions = { 'MarketType': 'spot', 'SpotOptions': { 'MaxPrice': self.maxprice }}
   if self.instance:
    return self.instance
   else:
@@ -21,7 +44,8 @@ class controller(object):
     MaxCount=1,
     InstanceType=self.type,
     KeyName = self.keyname,
-    SecurityGroups = ['oandaInstance-WebServerSecurityGroup-11HQXJK0XPBKV'])
+    SecurityGroups = ['oandaInstance-WebServerSecurityGroup-11HQXJK0XPBKV'],
+	InstanceMarketOptionsRequest )
    self.instance = instArr[0]
    print(self.instance.id)
    self.waitUntilRunning()
