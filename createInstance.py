@@ -1,16 +1,20 @@
 import boto3
 import time
 import os
+import configparser
 
 
 class controller(object):
- def __init__(self):
-  self.image_id = 'ami-a2ecd4c7'
-  self.type = 't2.xlarge'
+ def __init__(self, config_name):
+  config = configparser.ConfigParser()
+  conf.read(config_name)
+  self.image_id = conf('AWS','image_id')
+  self.type = conf('AWS','type')
   self.ec2 = boto3.resource('ec2')
   self.instance = None
-  self.keyname = 'oandaInstance'
-  self.pemfile = '/home/ubuntu/oandaInstance.pem'
+  self.keyname = conf('AWS','keyname')
+  self.pemfile = conf('AWS','pemfile')
+  self.security_group = conf('AWS','security_group')
  def createInstance(self):
   if self.instance:
    return self.instance
@@ -21,7 +25,7 @@ class controller(object):
     MaxCount=1,
     InstanceType=self.type,
     KeyName = self.keyname,
-    SecurityGroups = ['oandaInstance-WebServerSecurityGroup-11HQXJK0XPBKV'])
+    SecurityGroups = [self.security_group])
    self.instance = instArr[0]
    print(self.instance.id)
    self.waitUntilRunning()
