@@ -23,16 +23,17 @@ import configparser
 
 
 class controller(object):
- def __init__(self, configname):
+ def __init__(self, config_name):
   config = configparser.ConfigParser()
-  config.read(configname)
+  conf.read(config_name)
+  self.image_id = conf('AWS','image_id')
+  self.type = conf('AWS','type')
   self.ec2 = boto3.resource('ec2')
-  self.image_id = config.get('EC2','image_id')# 'ami-a2ecd4c7'
-  self.type = config.get('EC2','type')# 't2.xlarge'
   self.instance = None
-  self.keyname = config.get('EC2','keyname')# 'oandaInstance'
-  self.pemfile = config.get('EC2','pemfile')#/home/ubuntu/oandaInstance.pem'
-  self.maxprice = config.get('EC2','max_price')
+  self.maxprice = config.get('AWS','max_price')
+  self.keyname = conf('AWS','keyname')
+  self.pemfile = conf('AWS','pemfile')
+  self.security_group = conf('AWS','security_group')
  def createInstance(self):
   marketOptions = { 'MarketType': 'spot', 'SpotOptions': { 'MaxPrice': self.maxprice }}
   if self.instance:
@@ -44,8 +45,8 @@ class controller(object):
     MaxCount=1,
     InstanceType=self.type,
     KeyName = self.keyname,
-    SecurityGroups = ['oandaInstance-WebServerSecurityGroup-11HQXJK0XPBKV'],
-	InstanceMarketOptionsRequest )
+	InstanceMarketOptionsRequest = marketOptions,
+    SecurityGroups = [self.security_group])
    self.instance = instArr[0]
    print(self.instance.id)
    self.waitUntilRunning()
