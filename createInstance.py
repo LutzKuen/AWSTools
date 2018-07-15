@@ -19,21 +19,21 @@ Author: Lutz Kuenneke, 12.07.2018
 import boto3
 import time
 import os
-import configparser
+from configparser import ConfigParser
 
 
 class controller(object):
  def __init__(self, config_name):
-  config = configparser.ConfigParser()
+  conf = ConfigParser()
   conf.read(config_name)
-  self.image_id = conf('AWS','image_id')
-  self.type = conf('AWS','type')
+  self.image_id = conf.get('AWS','image_id')
+  self.type = conf.get('AWS','type')
   self.ec2 = boto3.resource('ec2')
   self.instance = None
-  self.maxprice = config.get('AWS','max_price')
-  self.keyname = conf('AWS','keyname')
-  self.pemfile = conf('AWS','pemfile')
-  self.security_group = conf('AWS','security_group')
+  self.maxprice = conf.get('AWS','max_price')
+  self.keyname = conf.get('AWS','keyname')
+  self.pemfile = conf.get('AWS','pemfile')
+  self.security_group = conf.get('AWS','security_group')
  def createInstance(self):
   marketOptions = { 'MarketType': 'spot', 'SpotOptions': { 'MaxPrice': self.maxprice }}
   if self.instance:
@@ -45,20 +45,28 @@ class controller(object):
     MaxCount=1,
     InstanceType=self.type,
     KeyName = self.keyname,
-	InstanceMarketOptionsRequest = marketOptions,
+    InstanceMarketOptions = marketOptions,
     SecurityGroups = [self.security_group])
    self.instance = instArr[0]
    print(self.instance.id)
-   self.waitUntilRunning()
+   #self.waitUntilRunning()
    return self.instance
  def terminateInstance(self):
   if not self.instance:
-   print('No running instance')
+   prent('No running instance')
   else:
    response = self.instance.terminate()
    print(response)
  def waitUntilRunning(self):
-  time.sleep(60) # TODO: try to come up with something useful
+  while True:
+   client = boto3.client('ec2')
+   response = client.describe_instances(InstanceIds = [self.instance.instance_id])
+   state = response['Reservations'][0]['Instances'][0]['State']['Code']
+   if state == 16:
+    return
+   else:
+    print('Instance ' + str(instance.id) + ', state: ' + str(state))
+    time.sleep(10)
  def transferFilesToWorker(self, filesList):
   if not self.instance:
    print('Instantiate a worker first')
