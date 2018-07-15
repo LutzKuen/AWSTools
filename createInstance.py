@@ -58,8 +58,9 @@ class controller(object):
    response = self.instance.terminate()
    print(response)
  def waitUntilRunning(self):
+  time.sleep(10)
+  client = boto3.client('ec2')
   while True:
-   client = boto3.client('ec2')
    response = client.describe_instances(InstanceIds = [self.instance.instance_id])
    state = response['Reservations'][0]['Instances'][0]['State']['Code']
    if state == 16:
